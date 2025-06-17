@@ -3,7 +3,7 @@
 	"data": 
 	{
 		"DEBUG": false,
-		"ADRENALINE_RUSH_KEYS": true,
+		"ADRENALINE_RUSH_KEYS": false,
 		"ADRENALINE_RUSH_KEYS_DESCRIPTION": "Preciona os botoes KEY_A, KEY_B e KEY_C assim que a habilidade Adrenaline Rush for ativada. true == habilitado | false == desabilitado",
 		"KEY_A": "f1",
 		"KEY_B": "f2",
