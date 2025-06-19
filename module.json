@@ -3,12 +3,12 @@
     "name": "DRAGON-LANCER",
     "author": "Dragon",
     "description": "==",
-    "version": "1.0",
+    "version": "2.0",
     "servers": ["https://raw.githubusercontent.com/DragonTera/DRAGON-LANCER/MASTER/"],
     "options": {
         "niceName": "DRAGON-LANCER",
         "guiName": "DRAGON-LANCER",
-        "settingsVersion": 1,
+        "settingsVersion": 2,
         "settingsFile": "config.json",
         "settingsMigrator": "settings_migrator.js"
     }
