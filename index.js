@@ -16,6 +16,7 @@ const S_SHIELD_BASH_0       = 50101;
 const S_SHIELD_BASH_1       = 50102;
 
 const S_ONSLAUGHT_0         = 30200;
+const S_ONSLAUGHT_1         = 30230;    //full
 
 const S_INFURIATE           = 120100;
 const S_STAND_FAST          = 20200;
@@ -203,7 +204,7 @@ module.exports = function archer(mod)
                         ...(mod.majorPatchVersion >= 75 ? { projectileSpeed: 1 } : 0n),
                         id: atkId[STAND_FAST],
                         effectScale: 1.0,
-                        moving: false,
+                        moving: event.moving,
                         dest: { x: 0, y: 0, Z: 0 },
                         target: 0n,
                         animSeq: [],
@@ -381,36 +382,39 @@ module.exports = function archer(mod)
             if(skillCd[ONSLAUGHT] == false)
             {
                 finish[SHIELD_BASH] = false;
+                finish[ONSLAUGHT]   = false;
 
                 clearInterval(onslaughtTask);
                 onslaughtTask = setInterval(function ()
                 {
-                    if((event.skill.id != S_SHIELD_BASH_0 && event.skill.id != S_SHIELD_BASH_1) || finish[SHIELD_BASH] == true)
+                    if((event.skill.id != S_SHIELD_BASH_0 && event.skill.id != S_SHIELD_BASH_1) || finish[SHIELD_BASH] == true || finish[ONSLAUGHT] == true)
                     {
                         clearInterval(onslaughtTask);
                         return;
                     }
-
-                    mod.toServer('C_START_SKILL', 7,
+                    else
                     {
-                        skill: S_ONSLAUGHT_0,
-                        w: event.w,
-                        loc: {
-                            x: event.loc.x,
-                            y: event.loc.y,
-                            z: event.loc.z
-                        },
-                        dest: {
-                            x: event.dest.x,
-                            y: event.dest.y,
-                            z: event.dest.z
-                        },
-                        unk: event.unk,
-                        moving: event.moving,
-                        continue: event.continue,
-                        target: event.target,
-                        unk2: event.unk2,
-                    });
+                        mod.toServer('C_START_SKILL', 7,
+                        {
+                            skill: S_ONSLAUGHT_0,
+                            w: event.w,
+                            loc: {
+                                x: event.loc.x,
+                                y: event.loc.y,
+                                z: event.loc.z
+                            },
+                            dest: {
+                                x: event.dest.x,
+                                y: event.dest.y,
+                                z: event.dest.z
+                            },
+                            unk: event.unk,
+                            moving: event.moving,
+                            continue: event.continue,
+                            target: event.target,
+                            unk2: event.unk2,
+                        });
+                    }
                 }, 20, event);
             }
         }
@@ -453,6 +457,8 @@ module.exports = function archer(mod)
                 clearInterval(adrenalineRushTask);
             }, 100, event);
         }
+        else if(event.skill.id == S_ONSLAUGHT_0 || event.skill.id == S_ONSLAUGHT_1)
+            finish[ONSLAUGHT] = true;
         else if(event.skill.id == S_SHIELD_BASH_0 || event.skill.id == S_SHIELD_BASH_1)
             finish[SHIELD_BASH] = true;
         else if(event.skill.id == S_SHIELD_BARRAGE_0)
