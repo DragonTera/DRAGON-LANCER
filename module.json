@@ -3,11 +3,11 @@
     "name": "DRAGON-LANCER",
     "author": "Dragon",
     "description": "==",
-    "version": "2.01",
+    "version": "2.02",
     "servers": ["https://raw.githubusercontent.com/DragonTera/DRAGON-LANCER/MASTER/"],
     "options": {
-        "niceName": "DRAGON-LANCER",
-        "guiName": "DRAGON-LANCER",
+        "niceName": "<font color='#04ACEC'>DRAGON-LANCER</font>",
+        "guiName": "<font color='#04ACEC'>DRAGON-LANCER</font>",
         "settingsVersion": 2,
         "settingsFile": "config.json",
         "settingsMigrator": "settings_migrator.js"

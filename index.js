@@ -1,6 +1,6 @@
 const SettingsUI = require('tera-mod-ui').Settings;
 
-const TAG = 'DRAGON-LANCER: ';
+const TAG = "<font color='#04ACEC'>DRAGON-LANCER:</font> ";
 
 const JOB_LANCER            = 1;
 
@@ -16,12 +16,13 @@ const S_SHIELD_BASH_0       = 50101;
 const S_SHIELD_BASH_1       = 50102;
 
 const S_ONSLAUGHT_0         = 30200;
-const S_ONSLAUGHT_1         = 30230;    //full
+const S_ONSLAUGHT_1         = 30230;
 
 const S_INFURIATE           = 120100;
 const S_STAND_FAST          = 20200;
 
-const S_SPRING_ATTACK       = 131100;
+const S_SPRING_ATTACK_0     = 131100;
+const S_SPRING_ATTACK_1     = 131130;
 
 const S_SHIELD_BARRAGE_0    = 181100;
 const S_SHIELD_BARRAGE_1    = 181101;
@@ -32,13 +33,15 @@ const S_ADRENALINE_RUSH_2   = 170250;
 
 const AUTO_BLOCK_DELAY      = 1;
 
-module.exports = function archer(mod)
+const MINIMUM_RE            = 50;
+
+module.exports = function lancer(mod)
 {
     let job;
     let model;
     let playerId;
-    let speed;
-    let myRe = 50;
+    let mySpeed;
+    let myRe = MINIMUM_RE + 10;
 
     let atkIdBase = 0xFEFEFFEE;
     let atkId     = [];
@@ -66,7 +69,7 @@ module.exports = function archer(mod)
 
     mod.hook('S_PLAYER_STAT_UPDATE', mod.majorPatchVersion < 105 ? 14 : (mod.majorPatchVersion < 108 ? 15 : 17), (event) =>
     {
-        speed = (event.attackSpeedBonus + event.attackSpeed) / event.attackSpeed;
+        mySpeed = (event.attackSpeedBonus + event.attackSpeed) / event.attackSpeed;
 
         return;
     });
@@ -90,7 +93,7 @@ module.exports = function archer(mod)
         if(job != JOB_LANCER){return;}
         if(mod.settings.DEBUG){console.log(TAG + 'S_START_COOLTIME_SKILL: ' + event.skill.id + ' / ' + event.cooldown);}
 
-        if(event.skill.id == S_SPRING_ATTACK)
+        if(event.skill.id == S_SPRING_ATTACK_0)
         {
             skillCd[SPRING_ATTACK] = true;
             setTimeout(function (){skillCd[SPRING_ATTACK] = false;}, event.cooldown);
@@ -113,7 +116,9 @@ module.exports = function archer(mod)
         else if(event.skill.id == S_SHIELD_BARRAGE_0)
         {
             skillCd[SHIELD_BARRAGE_0] = true;
+            skillCd[SHIELD_BARRAGE_1] = true;
             setTimeout(function (){skillCd[SHIELD_BARRAGE_0] = false;}, event.cooldown);
+            setTimeout(function (){skillCd[SHIELD_BARRAGE_1] = false;}, event.cooldown);
         }
         
         return;
@@ -143,7 +148,7 @@ module.exports = function archer(mod)
     {
         if(job != JOB_LANCER){return;}
         if(mod.settings.DEBUG){console.log(TAG + 'C_PRESS_SKILL: ' + event.skill.id);}
-
+        
         return;
 	});
 
@@ -155,8 +160,7 @@ module.exports = function archer(mod)
         if(event.skill.id == S_INFURIATE && myRe > 49 && mod.settings.INFURIATE_CANCEL == true)
         {
             finish[INFURIATE] = false;
-            atkId[STAND_FAST] = atkIdBase;
-            atkIdBase--;
+            atkId[STAND_FAST] = atkIdBase--;
             
             clearInterval(ifuriateTask);
             ifuriateTask = setInterval(function ()
@@ -188,6 +192,7 @@ module.exports = function archer(mod)
                         },
                         w: event.w,
                     });
+
                     mod.toClient('S_ACTION_STAGE', 9, 
                     {
                         gameId: playerId,
@@ -200,12 +205,16 @@ module.exports = function archer(mod)
                         templateId: model,
                         skill: S_STAND_FAST,
                         stage: 0,
-                        speed: 1,
+                        speed: mySpeed,
                         ...(mod.majorPatchVersion >= 75 ? { projectileSpeed: 1 } : 0n),
                         id: atkId[STAND_FAST],
                         effectScale: 1.0,
                         moving: event.moving,
-                        dest: { x: 0, y: 0, Z: 0 },
+                        dest: {
+                            x: event.dest.x,
+                            y: event.dest.y,
+                            z: event.dest.z
+                        },
                         target: 0n,
                         animSeq: [],
                     });
@@ -223,7 +232,7 @@ module.exports = function archer(mod)
                             w: event.w,
                             templateId: model,
                             skill: S_STAND_FAST,
-                            type: 10,
+                            type: 11,
                             id: atkId[STAND_FAST],
                         });
                         
@@ -235,21 +244,19 @@ module.exports = function archer(mod)
             }, 50, event);
             return;
         }
-        else if(event.skill.id == S_SHIELD_BARRAGE_0 && myRe > 49 && mod.settings.SHIELD_BARRAGE_CANCEL == true)
+        else if(event.skill.id == S_SHIELD_BARRAGE_0 && myRe > MINIMUM_RE && mod.settings.SHIELD_BARRAGE_CANCEL == true)
         {
             if(event.moving == true && mod.settings.SHIELD_BARRAGE_CANCEL_AWSD == true){return;}
-            if(event.skill.id != S_SHIELD_BARRAGE_0){return;}
 
             finish[SHIELD_BARRAGE_0] = false;
-            atkId[STAND_FAST]      = atkIdBase;
-            atkIdBase--;
+            atkId[STAND_FAST]        = atkIdBase--;
 
             clearInterval(shieldBarrageTask);
             shieldBarrageTask = setInterval(function ()
             {
                 if(skillCd[SHIELD_BARRAGE_0] == true)
                 {
-                    mod.toServer('C_PRESS_SKILL', 4,
+                    mod.toServer('C_PRESS_SKILL', mod.majorPatchVersion < 114 ? 4 : 5,
                     {
                         skill: S_STAND_FAST,
                         press: true,
@@ -260,7 +267,7 @@ module.exports = function archer(mod)
                         },
                         w: event.w,
                     });
-                    mod.toServer('C_PRESS_SKILL', 4,
+                    mod.toServer('C_PRESS_SKILL', mod.majorPatchVersion < 114 ? 4 : 5,
                     {
                         skill: S_STAND_FAST,
                         press: false,
@@ -284,12 +291,16 @@ module.exports = function archer(mod)
                         templateId: model,
                         skill: S_STAND_FAST,
                         stage: 0,
-                        speed: 1,
+                        speed: mySpeed,
                         ...(mod.majorPatchVersion >= 75 ? { projectileSpeed: 1 } : 0n),
                         id: atkId[STAND_FAST],
                         effectScale: 1.0,
-                        moving: false,
-                        dest: { x: 0, y: 0, Z: 0 },
+                        moving: event.moving,
+                        dest: {
+                            x: event.dest.x,
+                            y: event.dest.y,
+                            z: event.dest.z
+                        },
                         target: 0n,
                         animSeq: [],
                     });
@@ -335,15 +346,16 @@ module.exports = function archer(mod)
                         if(mod.settings.AUTO_SPRING_ATTACK == true)
                         {
                             finish[SHIELD_BARRAGE_1] = false;
+                            finish[SPRING_ATTACK]    = false;
 
                             clearInterval(springAttackTask);
                             springAttackTask = setInterval(function ()
                             {
-                                if(finish[SHIELD_BARRAGE_1] == false)
+                                if(finish[SHIELD_BARRAGE_1] == false && finish[SPRING_ATTACK] == false)
                                 {
                                     mod.toServer('C_START_SKILL', 7,
                                     {
-                                        skill: S_SPRING_ATTACK,
+                                        skill: S_SPRING_ATTACK_0,
                                         w: event.w,
                                         loc: {
                                             x: event.loc.x,
@@ -450,26 +462,28 @@ module.exports = function archer(mod)
                 if(mod.settings.KEY_C != "")
                     setTimeout(function (){robot.keyTap(mod.settings.KEY_C);},50);
 
-            }, 50, event);
+            }, 100, event);
 
             setTimeout(function ()
             {
                 clearInterval(adrenalineRushTask);
-            }, 100, event);
+            }, 200, event);
         }
-        else if(event.skill.id == S_ONSLAUGHT_0 || event.skill.id == S_ONSLAUGHT_1)
-            finish[ONSLAUGHT] = true;
-        else if(event.skill.id == S_SHIELD_BASH_0 || event.skill.id == S_SHIELD_BASH_1)
-            finish[SHIELD_BASH] = true;
-        else if(event.skill.id == S_SHIELD_BARRAGE_0)
-            finish[SHIELD_BARRAGE_0] = true;
-        else if(event.skill.id == S_SHIELD_BARRAGE_1)
-            finish[SHIELD_BARRAGE_1] = true;
+        else if(event.skill.id == S_SPRING_ATTACK_0 || event.skill.id == S_SPRING_ATTACK_1)
+            finish[SPRING_ATTACK] = true;
         else if(event.skill.id == S_INFURIATE)
             finish[INFURIATE] = true;
         else if(event.skill.id == S_STAND_FAST)
             finish[STAND_FAST] = true;
-
+        else if(event.skill.id == S_SHIELD_BASH_0 || event.skill.id == S_SHIELD_BASH_1)
+            finish[SHIELD_BASH] = true;
+        else if(event.skill.id == S_ONSLAUGHT_0 || event.skill.id == S_ONSLAUGHT_1)
+            finish[ONSLAUGHT] = true;
+        else if(event.skill.id == S_SHIELD_BARRAGE_0)
+            finish[SHIELD_BARRAGE_0] = true;
+        else if(event.skill.id == S_SHIELD_BARRAGE_1)
+            finish[SHIELD_BARRAGE_1] = true;
+        
         return;
     });
 
